@@ -65,7 +65,7 @@ app.post('/queues', function (req, res) {
         },
         function (err, result) {
             if (err) {
-                res.json(err);
+                res.status(400).json(err);
             } else {
                 var queue = result.ops[0];
                 var id = queue._id;
@@ -80,18 +80,18 @@ app.post('/queues/:id/login', function (req, res) {
     var id = req.params.id;
 
     if (!secret || !id) {
-        res.json({error: 'Missing values'});
+        res.status(400).json({error: 'Missing values'});
     }
     queue_col.findOne({_id: _ID(id)},  function (err, queue) {
         if (err) {
-            res.json(err);
+            res.status(400).json(err);
         } if (!queue) {
-            res.sendStatus(404);
+            res.status(404).json({error: "Queue not found"});
         } else {
             if (secret == queue.secret) {
                 res.send('/queues/' + id + '?token=' + token_create(id));
             } else {
-                res.sendStatus(401);
+                res.status(401).json({error: "Invalid password"});
             }
         }
     });
@@ -104,8 +104,10 @@ app.get('/queues/:id', function (req, res) {
         res.json({error: 'Missing values'});
     }
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
-        if (err || !q) {
-            res.sendStatus(404);
+        if (err) {
+            res.status(400).json(err);
+        } else if(!q) {
+            res.status(404).json({error: "Queue not found"});
         } else {
             res.json({queue: format_queue_info(q)});
         }
@@ -116,13 +118,15 @@ app.get('/queues/:id', function (req, res) {
 app.delete('/queues/:id', function (req, res) {
     var id = req.params.id;
     var token = req.body.token;
-    if (!id || !token) {
-        res.json({error: 'Missing values'});
+    if (!id) {
+        res.status(400).json(err);
+    } else if (!token) {
+        res.status(400).json({error: 'Missing values'});
     }
     token_validate(id, token);
     queue_col.remove({_id: _ID(id)}, function (err) {
         if (err) {
-            res.json(err);
+            res.status(400).json(err);
         } else {
             res.sendStatus(200);
         }
@@ -133,7 +137,7 @@ app.delete('/queues/:id', function (req, res) {
 app.delete('/queues', function (req, res) {
     queue_col.remove({}, function(err){
         if (err) {
-            res.json(err);
+            res.status(400).json(err);
         } else {
             res.sendStatus(200);
         }
