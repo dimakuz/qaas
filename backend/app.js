@@ -108,12 +108,11 @@ app.get('/queues/:id', function (req, res) {
 
 app.delete('/queues/:id', function (req, res) {
     var id = req.params.id;
-    var token = req.params.token
-
+    var token = req.body.token;
     if (!id || !token) {
         res.json({error: 'Missing values'});
     }
-    token_validate(id, req.params.token);
+    token_validate(id, token);
     queue_col.remove({_id: _ID(id)}, function(err){
         if (err) {
             res.json(err);
