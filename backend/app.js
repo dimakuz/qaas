@@ -205,6 +205,5 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     db = _db;
     queue_col = db.collection('_queue');
     auth_col = db.collection('_user');
-    token_col = db.collection('_token');
     app.listen(8000);
 });
