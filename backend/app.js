@@ -1,5 +1,5 @@
-// var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
-var DB_URL = "mongodb://localhost:27017/_queues";
+var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
+// var DB_URL = "mongodb://localhost:27017/_queues";
 var express = require('express');
 var bodyparser = require('body-parser');
 var mongodb = require('mongodb');
@@ -27,7 +27,7 @@ app.post('/queues', function (req, res) {
             secret: req.body.secret
         },
         function (err, doc) {
-            res.sendStatus(200);
+            res.send('/queues/' + req.body.name);
         }
     );
 });
