@@ -38,7 +38,7 @@ function token_validate(queue, token) {
 function format_queue_info(queue) {
     return {
         name: queue.name,
-        id: queue._id};
+        _id: queue._id};
 }
 
 app.get('/queues', function (req, res) {
@@ -55,6 +55,9 @@ app.post('/queues', function (req, res) {
     var name = req.body.name;
     var secret = req.body.secret;
 
+    if (!name || !secret) {
+        res.json({error: 'Missing values'});
+    }
     queue_col.insert(
         {
             name: name,
