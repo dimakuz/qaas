@@ -79,6 +79,9 @@ app.post('/queues/:id/login', function (req, res) {
     var secret = req.body.secret;
     var id = req.params.id;
 
+    if (!secret || !id) {
+        res.json({error: 'Missing values'});
+    }
     queue_col.findOne({_id: _ID(id)},  function (err, queue) {
         if (err) {
             res.json(err);
@@ -94,6 +97,9 @@ app.post('/queues/:id/login', function (req, res) {
 
 app.get('/queues/:id', function (req, res) {
     var id = req.params.id;
+    if (!id) {
+        res.json({error: 'Missing values'});
+    }
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
         res.json({queue: format_queue_info(q)});
     });
@@ -102,6 +108,11 @@ app.get('/queues/:id', function (req, res) {
 
 app.delete('/queues/:id', function (req, res) {
     var id = req.params.id;
+    var token = req.params.token
+
+    if (!id || !token) {
+        res.json({error: 'Missing values'});
+    }
     token_validate(id, req.params.token);
     queue_col.remove({_id: _ID(id)}, function(err){
         if (err) {
