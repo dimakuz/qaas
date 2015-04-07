@@ -21,13 +21,28 @@ app.use(session({
 
 
 function token_create(queue) {
-   return '11'; 
+   return '11';
 }
 
 function token_validate(queue, token) {
     return true;
 }
 
+function format_queue_info(queue) {
+    return {
+        name: queue.name,
+        id: queue._id};
+}
+
+app.get('/queues', function (req, res) {
+    // find currently does no filtering
+
+    // This queue returns all queues info
+    queue_col.find({}).toArray(function(err, docs) {
+       res.json(docs.map(format_queue_info));
+    });
+
+});
 
 app.post('/queues', function (req, res) {
     var name = req.body.name;
@@ -70,7 +85,7 @@ app.post('/queues/:id/login', function (req, res) {
 app.get('/queues/:id', function (req, res) {
     var id = req.params.id;
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
-        res.json({name: q.name});
+        res.json(format_queue_info(q));
     });
 });
 
