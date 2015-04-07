@@ -18,6 +18,14 @@ app.use(session({
     saveUninitialized: true,
     secret: 'qaas'
 }));
+// Add CORS headers
+app.use(function (request, response, next) {
+    response.header("Access-Control-Allow-Origin", "*");
+    response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    response.header("Access-Control-Allow-Resource", "*");
+    response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+    next();
+}); 
 
 function token_create(queue) {
     var token = uuid.v1();
