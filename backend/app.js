@@ -30,9 +30,11 @@ function token_create(queue) {
     return token;
 }
 
-function token_validate(queue, token) {
-    var cur = token_col.find({queue: queue, token: token});
-    return cur.hasNext();
+function token_validate(queue, token, cb) {
+    token_col.findOne({queue: queue, token: token}, function(err, result) {
+        cb(result != null);
+    });
+
 }
 
 function format_queue_info(queue) {
@@ -123,12 +125,17 @@ app.delete('/queues/:id', function (req, res) {
     } else if (!token) {
         res.status(400).json({error: 'Missing values'});
     }
-    token_validate(id, token);
-    queue_col.remove({_id: _ID(id)}, function (err) {
-        if (err) {
-            res.status(400).json(err);
+    token_validate(id, token, function(valid) {
+        if (!valid) {
+            res.status(401).json({error: 'Invalid token for delete operation'});
         } else {
-            res.sendStatus(200);
+            queue_col.remove({_id: _ID(id)}, function(err) {
+                if (err) {
+                    res.status(400).json(err);
+                } else {
+                    res.sendStatus(200);
+                }
+            });
         }
     });
 });
