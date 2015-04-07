@@ -6,7 +6,6 @@ var db;
 var queue_col;
 var token_col;
 var session = require('express-session');
-var cookie = require('cookie-session');
 var router = express.Router();
 
 app = express();
@@ -59,8 +58,6 @@ app.post(
     '/queue/:queue_id/service-begin-next',
     function (req, res) {
         var queue_id = req.params.queue_id;
-        console.log(queue_id);
-    }
 )
 
 app.post(
@@ -111,35 +108,80 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
 
 
 // (name, secret) -> queue id
-function create_queue(name, secret) {
-}
+function create_queue(name, secret, cb) {
+    queue_col.insert(
+        {
+            name: req.body.name,
+            secret: req.body.secret
+        },
+        function (err, doc)
+        {
+            cb(err);
+        }
+};
 
 // -> status
-function destroy_queue(id, secret) {
+function destroy_queue(id, cb) {
+    queue_col.remove(
+        {
+            name: req.body.name
+        },
+    function (err, doc)
+        {
+            cb(err);
+        }
 }
 
 // -> status
 function enqueue(queue_id, consumer_id) {
+    var queue = queue_col.find({id : queue_id});
+    queue['consumers'].insert(
+            {
+                consumer_id: consumer_id,
+                state: "waiting",
+            }
+        );
+    queue_col.update({id: queue_id}, queue);
 }
-
 
 // -> status
-function start_proccessing(queue_id, consumer_id) {
+// state -> waiting, processing, done.
+function change_state(queue_id, consumer_id, state) {
+    var queue = queue_col.find(
+            {
+                id : queue_id
+            }
+        );
+    consumer = queue.consumers.get(
+            {
+                consumer_id=consumer_id
+            }
+        );
+    consumer['state'] = state
+    queue['consumers'].update(
+            {
+                consumer_id: consumer_id
+            }, consumer);
+    queue_col.update(
+            {
+                id: queue_id
+            }, queue);
 }
 
-// -> status
-function finish_proccessing(queue_id, consumer_id) {
-}
-
-// -> (total in queue, total processing, consumer position) 
+// -> (total in queue, total processing, consumer position)
 function get_consumer_status(queue_id, consumer_id) {
+    return queue_col.find({id : queue_id})['consumers'].get({consumer_id=consumer_id});
 }
 
 // -> (list of consumers)
 function get_operator_status(queue_id, consumer_id) {
+    return queue_col.find({id : queue_id})['consumers']
 }
 
 // -> status
 function cancel_queueing(queue_id, consumer_id) {
+    var queue = queue_col.find({id : queue_id});
+    queue['consumers'].del({consumer_id=consumer_id});
+    queue_col.update({id: queue_id}, queue);
 }
 
