@@ -173,9 +173,9 @@ app.delete('/queues', function (req, res) {
 
 app.post('/authtokens', function (req, res) {
     var name = req.body.authtoken.name;
-    var secret = req.body.authtoken.secret;
+    var password = req.body.authtoken.password;
 
-    if (!name || !secret) {
+    if (!name || !password) {
         res.status(400).json({'error': 'Missing values'});
         return;
     }
@@ -183,7 +183,7 @@ app.post('/authtokens', function (req, res) {
     auth_col.insert(
         {
             name: name,
-            secret: secret,
+            password: password,
         },
         function (err, result) {
             if (err) {
