@@ -16,7 +16,7 @@ app.use(session({
     saveUninitialized: true,
     secret: 'qaas'
 }));
-/*
+
 app.post('/create', function (req, res) {
     console.log('/create');
     queue_col.insert(
@@ -25,11 +25,12 @@ app.post('/create', function (req, res) {
             secret: req.body.secret
         },
         function (err, doc) {
-            res.json({status: 'ok', id: doc.ops[0]._id});
+            res.sendStatus(200);
         }
     );
 });
 
+/*
 app.post('/login', function (req, res) {
     queue_col.findOne({_id: req.body.id}, function (err, doc) {
         if (doc.secret == req.body.secret) {
