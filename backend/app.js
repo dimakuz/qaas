@@ -1,4 +1,5 @@
-var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
+// var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
+var DB_URL = "mongodb://localhost:27017/_queues";
 var express = require('express');
 var bodyparser = require('body-parser');
 var mongodb = require('mongodb');
@@ -17,7 +18,8 @@ app.use(session({
     secret: 'qaas'
 }));
 
-app.post('/create', function (req, res) {
+
+app.post('/queues', function (req, res) {
     console.log('/create');
     queue_col.insert(
         {
@@ -28,6 +30,20 @@ app.post('/create', function (req, res) {
             res.sendStatus(200);
         }
     );
+});
+
+app.get('/queues/:queue_id', function (req, res) {
+    var q_id = req.params.queue_id
+    queue_col.findOne({name: q_id}, function (err, q) {
+        res.json(q);
+    });
+});
+
+mongodb.MongoClient.connect(DB_URL, function (err, _db) {
+    console.log('DB connected');
+    db = _db;
+    queue_col = db.collection('_queue');
+    app.listen(8000);
 });
 
 /*
@@ -45,7 +61,6 @@ app.post('/login', function (req, res) {
             res.json({status: 'invalid' });
         }
 })});
-*/
 
 app.post(
     '/queue/:queue_id/service-begin-by-id/:consumer_id',
@@ -99,13 +114,6 @@ app.post(
         console.log(queue_id);
     }
 )
-
-mongodb.MongoClient.connect(DB_URL, function (err, _db) {
-    console.log('DB connected');
-    db = _db;
-    queue_col = db.collection('_queue');
-    app.listen(8000);
-});
 
 
 // (name, secret) -> queue id
@@ -186,3 +194,4 @@ function cancel_queueing(queue_id, consumer_id) {
     queue_col.update({id: queue_id}, queue);
 }
 
+*/
