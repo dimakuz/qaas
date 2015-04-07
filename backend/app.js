@@ -1,4 +1,4 @@
-//var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
+var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
 var DB_URL = "mongodb://localhost:27017/_queues";
 var express = require('express');
 var bodyparser = require('body-parser');
@@ -7,7 +7,7 @@ var _ID = function (s) { return new mongodb.ObjectID(s); }
 var db;
 var queue_col;
 var queue_token_col = {};
-var auth_col;
+var user_col;
 var session = require('express-session');
 var uuid = require('node-uuid');
 
@@ -53,10 +53,17 @@ function format_queue_info(queue) {
         _id: queue._id};
 }
 
+function format_user_info(user) {
+    return {
+        name: user.name,
+        _id: user._id,
+    };
+
+}
 function format_authtoken_info(authtoken) {
     return {
         name: authtoken.name,
-        _id: authtoken.token_id,
+        _id: authtoken._id,
     };
 
 }
@@ -171,16 +178,21 @@ app.delete('/queues', function (req, res) {
     });
 });
 
-app.post('/authtokens', function (req, res) {
-    var name = req.body.authtoken.name;
-    var password = req.body.authtoken.password;
+app.post('/users', function (req, res) {
+    if (!req.body.user) {
+        res.status(400).json({'error': 'Missing values'});
+        return;
+    }
+
+    var name = req.body.user.name;
+    var password = req.body.user.password;
 
     if (!name || !password) {
         res.status(400).json({'error': 'Missing values'});
         return;
     }
 
-    auth_col.insert(
+    user_col.insert(
         {
             name: name,
             password: password,
@@ -189,11 +201,56 @@ app.post('/authtokens', function (req, res) {
             if (err) {
                 res.status(400).json(err);
             } else {
-                var authtoken = result.ops[0];
-                authtoken["token_id"] = auth_token_create(auth_token_create(authtoken._id));
+                var user = result.ops[0];
                 res.location(
-                    '/authtokens/' + auth_tokens['token_id']
-                ).json({authtoken: format_authtoken_info(authtoken)});
+                    '/users/' + user._id
+                ).json({
+                    user: format_user_info(user),
+                    authtoken: {
+                        _id: auth_token_create(auth_token_create(user._id)),
+                        name: name,
+                    },
+                });
+            }
+        }
+    );
+});
+
+
+app.post('/authtokens', function (req, res) {
+    if (!req.body.authtoken) {
+        res.status(400).json({'error': 'Missing values'});
+        return;
+    }
+    var name = req.body.authtoken.name;
+    var password = req.body.authtoken.password;
+
+    if (!name || !password) {
+        res.status(400).json({'error': 'Missing values'});
+        return;
+    }
+
+    user_col.findOne(
+        {
+            name: name,
+            password: password,
+        },
+        function (err, result) {
+            if (err) {
+                res.status(400).json(err);
+            } else if (!result) {
+                res.status(404).json({error: 'Invalid credentials'});
+            } else {
+                console.log(result);
+                authtoken = {
+                    _id: auth_token_create(result._id),
+                    name: name,
+                };
+                res.location(
+                    '/authtokens/' + auth_tokens.id
+                ).json({
+                    authtoken: format_authtoken_info(authtoken),
+                });
             }
         }
     );
@@ -204,6 +261,6 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
     db = _db;
     queue_col = db.collection('_queue');
-    auth_col = db.collection('_user');
+    user_col = db.collection('_user');
     app.listen(8000);
 });
