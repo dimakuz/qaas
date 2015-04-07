@@ -30,8 +30,8 @@ function token_create(queue) {
     return token;
 }
 
-function token_validate(queue, token, cb) {
-    token_col.findOne({queue: queue, token: token}, function(err, result) {
+function token_validate(queue_id, token, cb) {
+    token_col.findOne({queue: _ID(queue_id), token: token}, function(err, result) {
         cb(result != null);
     });
 
