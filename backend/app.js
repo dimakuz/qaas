@@ -73,7 +73,7 @@ app.post('/queues', function (req, res) {
                 var id = queue._id;
                 res.location(
                     '/queues/' + id + '?token=' + token_create(id)
-                ).json(format_queue_info(queue));
+                ).json({queue: format_queue_info(queue)});
             }
         }
     );
