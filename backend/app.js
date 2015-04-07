@@ -11,13 +11,7 @@ var session = require('express-session');
 var uuid = require('node-uuid');
 
 app = express();
-app.use(bodyparser.urlencoded({extended: false}));
-app.use(bodyparser.json());
-app.use(session({
-    resave: true,
-    saveUninitialized: true,
-    secret: 'qaas'
-}));
+//
 // Add CORS headers
 app.use(function (request, response, next) {
     response.header("Access-Control-Allow-Origin", "*");
@@ -25,7 +19,10 @@ app.use(function (request, response, next) {
     response.header("Access-Control-Allow-Resource", "*");
     response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     next();
-}); 
+});
+
+app.use(bodyparser.urlencoded({extended: false}));
+app.use(bodyparser.json());
 
 function token_create(queue) {
     var token = uuid.v1();
