@@ -54,7 +54,10 @@ function auth_token_validate(auth_id, token_id) {
 function format_queue_info(queue) {
     return {
         name: queue.name,
-        _id: queue._id};
+        last_ordinal: queue.last_ordinal,
+        subscribers: queue.subscribers,
+        _id: queue._id
+    };
 }
 
 function format_user_info(user) {
@@ -93,6 +96,8 @@ app.post('/queues', function (req, res) {
         {
             name: name,
             secret: secret,
+            last_ordinal: 0,
+            subscribers: [],
         },
         function (err, result) {
             if (err) {
@@ -145,6 +150,41 @@ app.get('/queues/:id', function (req, res) {
             return_error(res, 404, 'Queue not found');
         } else {
             res.json({queue: format_queue_info(q)});
+        }
+    });
+});
+
+app.post('/queues/:id/subscribers', function (req, res) {
+    var id = req.params.id;
+    var user_id = "fucked if i know";
+    if (!id) {
+        res.status(400).json({error: 'Missing values'});
+        return;
+    }
+
+    queue_col.findOne({_id: _ID(id)}, function (err, queue) {
+        if (err) {
+            return_error(res, 400, err);
+        } else if (!queue) {
+            return_error(res, 404, 'Queue not found');
+        } else {
+            var ordinal = queue.last_ordinal + 1;
+            var subscriber = {
+                _id: ordinal,
+                user_id: user_id,
+            };
+            queue_col.update(
+                {_id: queue._id},
+                {
+                    $inc: {last_ordinal: 1},
+                    $push: {
+                        subscribers: subscriber,
+                    },
+                },
+                function (err, count, result) {
+                    res.json({subscriber: subscriber});
+                }
+            );
         }
     });
 });
@@ -246,7 +286,6 @@ app.post('/authtokens', function (req, res) {
             } else if (!result) {
                 return_error(res, 404, 'Invalid credentials');
             } else {
-                console.log(result);
                 authtoken = {
                     _id: auth_token_create(result._id),
                     name: name,
