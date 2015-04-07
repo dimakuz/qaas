@@ -7,15 +7,18 @@ var _ID = function (s) { return new mongodb.ObjectID(s); }
 var db;
 var queue_col;
 var queue_token_col = {};
+var auth_col;
 var session = require('express-session');
 var uuid = require('node-uuid');
+
+var user_tokens = {};
 
 app = express();
 //
 // Add CORS headers
 app.use(function (request, response, next) {
     response.header("Access-Control-Allow-Origin", "*");
-    response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, X-AUTH-TOKEN");
     response.header("Access-Control-Allow-Resource", "*");
     response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     next();
@@ -34,10 +37,28 @@ function queue_token_validate(queue_id, token, cb) {
     cb(queue_token_col[token] == queue_id);
 }
 
+var auth_tokens = {};
+function auth_token_create(auth_id) {
+    var token = uuid.v1();
+    auth_tokens[token] = auth_id;
+    return token;
+}
+function auth_token_validate(auth_id, token_id) {
+    return auth_tokens[token_id] == auth_id;
+}
+
 function format_queue_info(queue) {
     return {
         name: queue.name,
         _id: queue._id};
+}
+
+function format_authtoken_info(authtoken) {
+    return {
+        name: authtoken.name,
+        _id: authtoken.token_id,
+    };
+
 }
 
 app.get('/queues', function (req, res) {
@@ -76,7 +97,7 @@ app.post('/queues', function (req, res) {
     );
 });
 
-app.post('/queues/:id/login', function (req, res) {
+app.post('/queues/:id/get_token', function (req, res) {
     var secret = req.body.secret;
     var id = req.params.id;
 
@@ -150,159 +171,40 @@ app.delete('/queues', function (req, res) {
     });
 });
 
+app.post('/authtokens', function (req, res) {
+    var name = req.body.authtoken.name;
+    var secret = req.body.authtoken.secret;
+
+    if (!name || !secret) {
+        res.status(400).json({'error': 'Missing values'});
+        return;
+    }
+
+    auth_col.insert(
+        {
+            name: name,
+            secret: secret,
+        },
+        function (err, result) {
+            if (err) {
+                res.status(400).json(err);
+            } else {
+                var authtoken = result.ops[0];
+                authtoken["token_id"] = auth_token_create(auth_token_create(authtoken._id));
+                res.location(
+                    '/authtokens/' + auth_tokens['token_id']
+                ).json({authtoken: format_authtoken_info(authtoken)});
+            }
+        }
+    );
+});
+
+
 mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
     db = _db;
     queue_col = db.collection('_queue');
+    auth_col = db.collection('_user');
+    token_col = db.collection('_token');
     app.listen(8000);
 });
-
-/*
-app.post('/login', function (req, res) {
-    queue_col.findOne({_id: req.body.id}, function (err, doc) {
-        if (doc.secret == req.body.secret) {
-            var token = 1 ; //genuuid();
-            console.log('generated token' + token);
-            token_col.insert({
-                token_id: token,
-                queue_id: req.body.id
-            });
-            res.json({status: 'ok', token_id: token});
-        } else {
-            res.json({status: 'invalid' });
-        }
-})});
-
-app.post(
-    '/queue/:queue_id/service-begin-by-id/:consumer_id',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-        var consumer_id = req.params.consumer_id;
-    }
-)
-
-app.post(
-    '/queue/:queue_id/service-begin-next',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-)
-
-app.post(
-    '/queue/:queue_id/service-finish/:consumer_id',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-    }
-)
-
-app.post(
-    '/queue/:queue_id/service-status',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-        console.log(queue_id);
-    }
-)
-
-app.post(
-    '/queue/:queue_id/enqueue',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-        console.log(queue_id);
-    }
-)
-
-app.post(
-    '/queue/:queue_id/status',
-    function (req, res) {
-        var queue_id = req.params.queue_id;
-        console.log(queue_id);
-    }
-)
-
-app.post(
-    '/query/by-name/:queue_name',
-    function (req, res) {
-        var queue_name = req.params.queue_name;
-        console.log(queue_id);
-    }
-)
-
-
-// (name, secret) -> queue id
-function create_queue(name, secret, cb) {
-    queue_col.insert(
-        {
-            name: req.body.name,
-            secret: req.body.secret
-        },
-        function (err, doc)
-        {
-            cb(err);
-        }
-};
-
-// -> status
-function destroy_queue(id, cb) {
-    queue_col.remove(
-        {
-            name: req.body.name
-        },
-    function (err, doc)
-        {
-            cb(err);
-        }
-}
-
-// -> status
-function enqueue(queue_id, consumer_id) {
-    var queue = queue_col.find({id : queue_id});
-    queue['consumers'].insert(
-            {
-                consumer_id: consumer_id,
-                state: "waiting",
-            }
-        );
-    queue_col.update({id: queue_id}, queue);
-}
-
-// -> status
-// state -> waiting, processing, done.
-function change_state(queue_id, consumer_id, state) {
-    var queue = queue_col.find(
-            {
-                id : queue_id
-            }
-        );
-    consumer = queue.consumers.get(
-            {
-                consumer_id=consumer_id
-            }
-        );
-    consumer['state'] = state
-    queue['consumers'].update(
-            {
-                consumer_id: consumer_id
-            }, consumer);
-    queue_col.update(
-            {
-                id: queue_id
-            }, queue);
-}
-
-// -> (total in queue, total processing, consumer position)
-function get_consumer_status(queue_id, consumer_id) {
-    return queue_col.find({id : queue_id})['consumers'].get({consumer_id=consumer_id});
-}
-
-// -> (list of consumers)
-function get_operator_status(queue_id, consumer_id) {
-    return queue_col.find({id : queue_id})['consumers']
-}
-
-// -> status
-function cancel_queueing(queue_id, consumer_id) {
-    var queue = queue_col.find({id : queue_id});
-    queue['consumers'].del({consumer_id=consumer_id});
-    queue_col.update({id: queue_id}, queue);
-}
-
-*/
