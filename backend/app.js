@@ -71,7 +71,9 @@ app.post('/queues', function (req, res) {
             } else {
                 var queue = result.ops[0];
                 var id = queue._id;
-                res.send('/queues/' + id + '?token=' + token_create(id));
+                res.location(
+                    '/queues/' + id + '?token=' + token_create(id)
+                ).json(format_queue_info(queue));
             }
         }
     );
