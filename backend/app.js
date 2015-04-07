@@ -101,7 +101,6 @@ app.get('/queues/:id', function (req, res) {
 
 
 app.delete('/queues/:id', function (req, res) {
-    // validate token
     var id = req.params.id;
     token_validate(id, req.params.token);
     queue_col.remove({_id: _ID(id)}, function(err){
@@ -112,6 +111,15 @@ app.delete('/queues/:id', function (req, res) {
     });
 });
 
+// For debug - remove all queues
+app.delete('/queues', function (req, res) {
+    queue_col.remove({}, function(err){
+        if (err) {
+            res.json(err);
+        }
+        res.sendStatus(200);
+    });
+});
 
 mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
