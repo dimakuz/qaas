@@ -51,8 +51,8 @@ app.get('/queues', function (req, res) {
 });
 
 app.post('/queues', function (req, res) {
-    var name = req.body.name;
-    var secret = req.body.secret;
+    var name = req.body.queue.name;
+    var secret = req.body.queue.secret;
 
     if (!name || !secret) {
         res.json({error: 'Missing values'});
