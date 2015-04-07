@@ -85,11 +85,14 @@ app.post('/queues/:id/login', function (req, res) {
     queue_col.findOne({_id: _ID(id)},  function (err, queue) {
         if (err) {
             res.json(err);
+        } if (!queue) {
+            res.sendStatus(404);
         } else {
-            if (secret == queue.secret)
+            if (secret == queue.secret) {
                 res.send('/queues/' + id + '?token=' + token_create(id));
-            else
+            } else {
                 res.sendStatus(401);
+            }
         }
     });
 });
@@ -117,11 +120,12 @@ app.delete('/queues/:id', function (req, res) {
         res.json({error: 'Missing values'});
     }
     token_validate(id, token);
-    queue_col.remove({_id: _ID(id)}, function(err){
+    queue_col.remove({_id: _ID(id)}, function (err) {
         if (err) {
             res.json(err);
+        } else {
+            res.sendStatus(200);
         }
-        res.sendStatus(200);
     });
 });
 
@@ -130,8 +134,9 @@ app.delete('/queues', function (req, res) {
     queue_col.remove({}, function(err){
         if (err) {
             res.json(err);
+        } else {
+            res.sendStatus(200);
         }
-        res.sendStatus(200);
     });
 });
 
