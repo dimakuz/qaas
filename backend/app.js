@@ -7,6 +7,7 @@ var queue_col;
 var token_col;
 var session = require('express-session');
 var cookie = require('cookie-session');
+var router = express.Router();
 
 app = express();
 app.use(bodyparser.urlencoded({extended: false}));
@@ -16,7 +17,7 @@ app.use(session({
     saveUninitialized: true,
     secret: 'qaas'
 }));
-
+/*
 app.post('/create', function (req, res) {
     console.log('/create');
     queue_col.insert(
@@ -44,6 +45,62 @@ app.post('/login', function (req, res) {
             res.json({status: 'invalid' });
         }
 })});
+*/
+
+app.post(
+    '/queue/:queue_id/service-begin-by-id/:consumer_id',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+        var consumer_id = req.params.consumer_id;
+    }
+)
+
+app.post(
+    '/queue/:queue_id/service-begin-next',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+        console.log(queue_id);
+    }
+)
+
+app.post(
+    '/queue/:queue_id/service-finish/:consumer_id',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+    }
+)
+
+app.post(
+    '/queue/:queue_id/service-status',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+        console.log(queue_id);
+    }
+)
+
+app.post(
+    '/queue/:queue_id/enqueue',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+        console.log(queue_id);
+    }
+)
+
+app.post(
+    '/queue/:queue_id/status',
+    function (req, res) {
+        var queue_id = req.params.queue_id;
+        console.log(queue_id);
+    }
+)
+
+app.post(
+    '/query/by-name/:queue_name',
+    function (req, res) {
+        var queue_name = req.params.queue_name;
+        console.log(queue_id);
+    }
+)
 
 mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
