@@ -8,7 +8,7 @@ var db;
 var queue_col;
 var token_col;
 var session = require('express-session');
-var router = express.Router();
+var uuid = require('node-uuid');
 
 app = express();
 app.use(bodyparser.urlencoded({extended: false}));
@@ -19,13 +19,15 @@ app.use(session({
     secret: 'qaas'
 }));
 
-
 function token_create(queue) {
-   return '11';
+    var token = uuid.v1();
+    token_col.insert({token: token, queue: queue});
+    return token;
 }
 
 function token_validate(queue, token) {
-    return true;
+    var cur = token_col.find({queue: queue, token: token});
+    return cur.hasNext();
 }
 
 function format_queue_info(queue) {
@@ -93,6 +95,7 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
     db = _db;
     queue_col = db.collection('_queue');
+    token_col = db.collection('_token');
     app.listen(8000);
 });
 
