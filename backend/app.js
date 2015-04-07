@@ -6,7 +6,7 @@ var mongodb = require('mongodb');
 var _ID = function (s) { return new mongodb.ObjectID(s); }
 var db;
 var queue_col;
-var token_col;
+var queue_token_col = {};
 var session = require('express-session');
 var uuid = require('node-uuid');
 
@@ -24,17 +24,14 @@ app.use(function (request, response, next) {
 app.use(bodyparser.urlencoded({extended: false}));
 app.use(bodyparser.json());
 
-function token_create(queue) {
+function queue_token_create(queue_id) {
     var token = uuid.v1();
-    token_col.insert({token: token, queue: queue});
+    queue_token_col[token] = queue_id;
     return token;
 }
 
-function token_validate(queue_id, token, cb) {
-    token_col.findOne({queue: _ID(queue_id), token: token}, function(err, result) {
-        cb(result != null);
-    });
-
+function queue_token_validate(queue_id, token, cb) {
+    cb(queue_token_col[token] == queue_id);
 }
 
 function format_queue_info(queue) {
@@ -72,7 +69,7 @@ app.post('/queues', function (req, res) {
                 var queue = result.ops[0];
                 var id = queue._id;
                 res.location(
-                    '/queues/' + id + '?token=' + token_create(id)
+                    '/queues/' + id + '?token=' + queue_token_create(id)
                 ).json({queue: format_queue_info(queue)});
             }
         }
@@ -93,7 +90,7 @@ app.post('/queues/:id/login', function (req, res) {
             res.status(404).json({error: "Queue not found"});
         } else {
             if (secret == queue.secret) {
-                res.send('/queues/' + id + '?token=' + token_create(id));
+                res.send('/queues/' + id + '?token=' + queue_token_create(id));
             } else {
                 res.status(401).json({error: "Invalid password"});
             }
@@ -127,9 +124,9 @@ app.delete('/queues/:id', function (req, res) {
     } else if (!token) {
         res.status(400).json({error: 'Missing values'});
     }
-    token_validate(id, token, function(valid) {
+    queue_token_validate(id, token, function(valid) {
         if (!valid) {
-            res.status(401).json({error: 'Invalid token for delete operation'});
+            res.status(401).json({error: 'Invalid qeueu token for delete operation'});
         } else {
             queue_col.remove({_id: _ID(id)}, function(err) {
                 if (err) {
@@ -157,7 +154,6 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     console.log('DB connected');
     db = _db;
     queue_col = db.collection('_queue');
-    token_col = db.collection('_token');
     app.listen(8000);
 });
 
