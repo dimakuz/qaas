@@ -27,6 +27,10 @@ app.use(function (request, response, next) {
 app.use(bodyparser.urlencoded({extended: false}));
 app.use(bodyparser.json());
 
+function return_error(res, code, msg) {
+    res.status(code).json({error: {message: msg}});
+}
+
 function queue_token_create(queue_id) {
     var token = uuid.v1();
     queue_token_col[token] = queue_id;
@@ -82,7 +86,7 @@ app.post('/queues', function (req, res) {
     var secret = req.body.queue.secret;
 
     if (!name || !secret) {
-        res.json({error: 'Missing values'});
+        return_error(res, 400, 'Missing values (name, secret)');
         return;
     }
     queue_col.insert(
@@ -109,18 +113,19 @@ app.post('/queues/:id/get_token', function (req, res) {
     var id = req.params.id;
 
     if (!secret || !id) {
-        res.status(400).json({error: 'Missing values'});
+        return_error(res, 400, 'Missing values (id, secret)');
+        return;
     }
     queue_col.findOne({_id: _ID(id)},  function (err, queue) {
         if (err) {
-            res.status(400).json(err);
+            return_error(res, 400, err);
         } if (!queue) {
-            res.status(404).json({error: "Queue not found"});
+            return_error(res, 404, 'Queue not found');
         } else {
             if (secret == queue.secret) {
                 res.send('/queues/' + id + '?token=' + queue_token_create(id));
             } else {
-                res.status(401).json({error: "Invalid password"});
+                return_error(res, 401, 'Invalid password');
             }
         }
     });
@@ -130,13 +135,14 @@ app.post('/queues/:id/get_token', function (req, res) {
 app.get('/queues/:id', function (req, res) {
     var id = req.params.id;
     if (!id) {
-        res.json({error: 'Missing values'});
+        return_error(res, 400, 'Missing values (id)');
+        return;
     }
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
         if (err) {
-            res.status(400).json(err);
+            return_error(res, 400, err);
         } else if(!q) {
-            res.status(404).json({error: "Queue not found"});
+            return_error(res, 404, 'Queue not found');
         } else {
             res.json({queue: format_queue_info(q)});
         }
@@ -147,18 +153,17 @@ app.get('/queues/:id', function (req, res) {
 app.delete('/queues/:id', function (req, res) {
     var id = req.params.id;
     var token = req.body.token;
-    if (!id) {
-        res.status(400).json(err);
-    } else if (!token) {
-        res.status(400).json({error: 'Missing values'});
+    if (!id || !token) {
+        return_error(res, 400, 'Missing values (token, id)')
+        return;
     }
     queue_token_validate(id, token, function(valid) {
         if (!valid) {
-            res.status(401).json({error: 'Invalid qeueu token for delete operation'});
+            return_error(res, 401, 'Invalid queue token for delete operation');
         } else {
             queue_col.remove({_id: _ID(id)}, function(err) {
                 if (err) {
-                    res.status(400).json(err);
+                    return_error(res, 400, err);
                 } else {
                     res.sendStatus(200);
                 }
@@ -171,7 +176,7 @@ app.delete('/queues/:id', function (req, res) {
 app.delete('/queues', function (req, res) {
     queue_col.remove({}, function(err){
         if (err) {
-            res.status(400).json(err);
+            return_error(res, 400, err);
         } else {
             res.sendStatus(200);
         }
@@ -180,7 +185,7 @@ app.delete('/queues', function (req, res) {
 
 app.post('/users', function (req, res) {
     if (!req.body.user) {
-        res.status(400).json({'error': 'Missing values'});
+        return_error(res, 400, 'Missing values (user)');
         return;
     }
 
@@ -188,7 +193,7 @@ app.post('/users', function (req, res) {
     var password = req.body.user.password;
 
     if (!name || !password) {
-        res.status(400).json({'error': 'Missing values'});
+        return_error(res, 400, 'Missing values (name, password)');
         return;
     }
 
@@ -199,7 +204,7 @@ app.post('/users', function (req, res) {
         },
         function (err, result) {
             if (err) {
-                res.status(400).json(err);
+                return_error(res, 400, err);
             } else {
                 var user = result.ops[0];
                 res.location(
@@ -219,14 +224,14 @@ app.post('/users', function (req, res) {
 
 app.post('/authtokens', function (req, res) {
     if (!req.body.authtoken) {
-        res.status(400).json({'error': 'Missing values'});
+        return_error(res, 400, 'Missing values (authtoken)')
         return;
     }
     var name = req.body.authtoken.name;
     var password = req.body.authtoken.password;
 
     if (!name || !password) {
-        res.status(400).json({'error': 'Missing values'});
+        return_error(res, 400, 'Missing values (name, password)');
         return;
     }
 
@@ -237,9 +242,9 @@ app.post('/authtokens', function (req, res) {
         },
         function (err, result) {
             if (err) {
-                res.status(400).json(err);
+                return_error(res, 400, err);
             } else if (!result) {
-                res.status(404).json({error: 'Invalid credentials'});
+                return_error(res, 404, 'Invalid credentials');
             } else {
                 console.log(result);
                 authtoken = {
