@@ -49,7 +49,7 @@ app.get('/queues', function (req, res) {
 
     // This queue returns all queues info
     queue_col.find({}).toArray(function(err, docs) {
-       res.json(docs.map(format_queue_info));
+       res.json({queues: docs.map(format_queue_info)});
     });
 
 });
@@ -95,7 +95,7 @@ app.post('/queues/:id/login', function (req, res) {
 app.get('/queues/:id', function (req, res) {
     var id = req.params.id;
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
-        res.json(format_queue_info(q));
+        res.json({queue: format_queue_info(q)});
     });
 });
 
