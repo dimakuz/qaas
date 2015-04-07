@@ -1,8 +1,9 @@
-var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
-// var DB_URL = "mongodb://localhost:27017/_queues";
+//var DB_URL = "mongodb://qaas2:qum6net@209.132.178.110:27017/qaas2";
+var DB_URL = "mongodb://localhost:27017/_queues";
 var express = require('express');
 var bodyparser = require('body-parser');
 var mongodb = require('mongodb');
+var _ID = function (s) { return new mongodb.ObjectID(s); }
 var db;
 var queue_col;
 var token_col;
@@ -19,23 +20,57 @@ app.use(session({
 }));
 
 
+function token_create(queue) {
+   return '11'; 
+}
+
+function token_validate(queue, token) {
+    return true;
+}
+
+
 app.post('/queues', function (req, res) {
-    console.log('/create');
+    var name = req.body.name;
+    var secret = req.body.secret;
+
     queue_col.insert(
         {
-            name: req.body.name,
-            secret: req.body.secret
+            name: name,
+            secret: secret,
         },
-        function (err, doc) {
-            res.send('/queues/' + req.body.name);
+        function (err, result) {
+            if (err) {
+                res.json(err);
+            } else {
+                var queue = result.ops[0];
+                var id = queue._id;
+                res.send('/queues/' + id + '?token=' + token_create(id));
+            }
         }
     );
 });
 
-app.get('/queues/:queue_id', function (req, res) {
-    var q_id = req.params.queue_id
-    queue_col.findOne({name: q_id}, function (err, q) {
-        res.json(q);
+app.post('/queues/:id/login', function (req, res) {
+    var secret = req.body.secret;
+    var id = req.params.id;
+
+    queue_col.findOne({_id: _ID(id)},  function (err, queue) {
+        if (err) {
+            res.json(err);
+        } else {
+            if (secret == queue.secret)
+                res.send('/queues/' + id + '?token=' + token_create(id));
+            else
+                res.sendStatus(401);
+        }
+    });
+});
+
+
+app.get('/queues/:id', function (req, res) {
+    var id = req.params.id;
+    queue_col.findOne({_id: _ID(id)}, function (err, q) {
+        res.json({name: q.name});
     });
 });
 
