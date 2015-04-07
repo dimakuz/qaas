@@ -43,7 +43,6 @@ function format_queue_info(queue) {
 
 app.get('/queues', function (req, res) {
     // find currently does no filtering
-
     // This queue returns all queues info
     queue_col.find({}).toArray(function(err, docs) {
        res.json({queues: docs.map(format_queue_info)});
@@ -57,6 +56,7 @@ app.post('/queues', function (req, res) {
 
     if (!name || !secret) {
         res.json({error: 'Missing values'});
+        return;
     }
     queue_col.insert(
         {
@@ -101,7 +101,11 @@ app.get('/queues/:id', function (req, res) {
         res.json({error: 'Missing values'});
     }
     queue_col.findOne({_id: _ID(id)}, function (err, q) {
-        res.json({queue: format_queue_info(q)});
+        if (err || !q) {
+            res.sendStatus(404);
+        } else {
+            res.json({queue: format_queue_info(q)});
+        }
     });
 });
 
