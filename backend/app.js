@@ -324,7 +324,18 @@ app.delete('/queues', function (req, res) {
 
 app.get('/users/:id', function (req, res) {
     var id = req.params.id;
-    res.json({user: {_id: id, name: "sam"}});
+    if (!id) {
+        return return_error(res, 400, "Missing ID");
+    }
+    user_col.findOne({_id: _ID(id)}, function (err, user) { 
+        if (err) {
+            return_error(res, 400, err);
+        } else if (!user) {
+            return_error(res, 404, "User not found");
+        } else {
+            res.json({user: format_user_info(user) });
+        }
+    });
 });
 
 app.post('/users', function (req, res) {
