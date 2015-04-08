@@ -185,20 +185,11 @@ app.post('/subscribers', function (req, res) {
         return return_error(res, 400, 'Missing values (id)');
     }
 
-    if (!req.body.subscriber || !req.body.subscriber.user) {
-        return return_error(res, 400, 'Missing values (subscriber, user)');
-    }
-
-    var user_id = req.body.subscriber.user._id;
-    if (!user_id) {
-        return return_error(res, 400, 'Missing values (user_id)');
-    }
-
     if (user_id != req['_USER_ID']) {
         return return_error(res, 403, 'Not authorized');
     }
 
-    queue_col.findOne({_id: _ID(id)}, function (err, queue) {
+    queue_col.findOne({_id: _ID(queue_id)}, function (err, queue) {
         if (err) {
             return_error(res, 400, err);
         } else if (!queue) {
@@ -208,12 +199,8 @@ app.post('/subscribers', function (req, res) {
             var subscriber = {
                 order: ordinal,
                 status: 'waiting',
-                user: {
-                    _id: user_id,
-                },
-                queue: {
-                    _id: queue_id,
-                },
+                user: user_id,
+                queue: queue_id,
             };
             subscriber_col.insert(subscriber);
             queue_col.update(
