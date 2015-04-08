@@ -78,6 +78,7 @@ function format_user_info(user) {
     return {
         name: user.name,
         _id: user._id,
+        authtoken: user.authtoken,
     };
 
 }
@@ -358,14 +359,15 @@ app.post('/users', function (req, res) {
                 return_error(res, 400, err);
             } else {
                 var user = result.ops[0];
+                user['authtoken'] = auth_token_create(user._id);
                 res.location(
                     '/users/' + user._id
                 ).json({
                     user: format_user_info(user),
-                    authtoken: {
-                        _id: auth_token_create(user._id),
+                    authtokens: [{
+                        _id: user.authtoken,
                         name: name,
-                    },
+                    }],
                 });
             }
         }
