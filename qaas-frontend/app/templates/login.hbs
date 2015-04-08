@@ -11,6 +11,7 @@
         <label for="password">Password</label>
         {{input type="password" class="form-control" placeholder="Password" value=model.password}}
     </div>
-    <button {{action 'create'}} class="btn btn-default">Log In</button>
+    <button {{action 'login'}} class="btn btn-default">Log In</button>
+    <button {{action 'register'}} class="btn btn-default">Register</button>
 </form>
 {{outlet}}

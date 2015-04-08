@@ -1,2 +1,6 @@
 <h1>{{model.name}}</h1>
+<form>
+    <button {{action 'enqueue'}} class="btn btn-default">Enter queue</button>
+    <button {{action 'register'}} class="btn btn-default">Manage</button>
+</form>
 {{outlet}}

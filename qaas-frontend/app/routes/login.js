@@ -1,9 +1,11 @@
 import Ember from 'ember';
 
 export default Ember.Route.extend({
-  model: function() {return this.store.createRecord('authtoken');},
+  model: function() {
+    return this.store.createRecord('authtoken');
+  },
   actions: {
-    create: function() {
+    login: function() {
       var self = this;
       this.controller.get('model').save().then(
         function(authToken) {
