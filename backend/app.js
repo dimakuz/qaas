@@ -85,6 +85,7 @@ function format_authtoken_info(authtoken) {
     return {
         name: authtoken.name,
         _id: authtoken._id,
+        user: authtoken.user,
     };
 
 }
@@ -397,6 +398,7 @@ app.post('/authtokens', function (req, res) {
                 authtoken = {
                     _id: auth_token_create(result._id),
                     name: name,
+                    user: result._id;
                 };
                 res.location(
                     '/authtokens/' + auth_tokens.id
