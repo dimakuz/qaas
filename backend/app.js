@@ -171,21 +171,21 @@ app.get('/queues/:id', function (req, res) {
 app.post('/queues/:id/subscribers', function (req, res) {
     var id = req.params.id;
     if (!id) {
-        return return_error(res, 400, 'Missing values');
+        return return_error(res, 400, 'Missing values (id)');
     }
 
     if (!req.body.subscriber || !req.body.subscriber.user) {
-        return return_error(res, 400, 'Missing values');
+        return return_error(res, 400, 'Missing values (subscriber, user)');
     }
 
     var user_id = req.body.subscriber.user._id;
     if (!user_id) {
-        return return_error(res, 400, 'Missing values');
+        return return_error(res, 400, 'Missing values (user_id)');
     }
 
-    if (user_id != req['_USER_ID']) {
-        return return_error(res, 403, 'Not authorized');
-    }
+    //if (user_id != req['_USER_ID']) {
+    //    return return_error(res, 403, 'Not authorized');
+    //}
 
     queue_col.findOne({_id: _ID(id)}, function (err, queue) {
         if (err) {
@@ -201,6 +201,7 @@ app.post('/queues/:id/subscribers', function (req, res) {
                     _id: user_id,
                 },
             };
+            subscriber_col.insert(subscriber);
             queue_col.update(
                 {_id: queue._id},
                 {
@@ -213,12 +214,6 @@ app.post('/queues/:id/subscribers', function (req, res) {
                     res.json({subscriber: subscriber});
                 }
             );
-            subscriber_col.insert(
-                {
-                    user: {
-                        _id: user_id
-                    }
-                });
         }
     });
 });
@@ -377,6 +372,6 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     db = _db;
     queue_col = db.collection('_queue');
     user_col = db.collection('_user');
-    subscriber_col = db.collection('_subscription');
+    subscriber_col = db.collection('_subscriber');
     app.listen(8000);
 });
