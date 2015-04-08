@@ -164,18 +164,21 @@ app.get('/queues/:id', function (req, res) {
         } else if(!q) {
             return_error(res, 404, 'Queue not found');
         } else {
+            console.log(id);
             subscriber_col.find(
-                {queue: _ID(id)},
-                function (err, result) {
+                {queue: id},
+                function (err, cursor) {
                     if (err) {
                         return return_error(res, 400, err);
                     }
-                    res.json(
-                        {
-                            queue: format_queue_info(q),
-                            subscribers: result.ops,
-                        }
-                    );
+                    cursor.toArray(function (err, subs) {
+                        res.json(
+                            {
+                                queue: format_queue_info(q),
+                                subscribers: subs,
+                            }
+                        );
+                    });
                 }
             );
 
