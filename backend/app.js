@@ -335,6 +335,11 @@ app.delete('/queues', function (req, res) {
     });
 });
 
+app.get('/users/:id', function (req, res) {
+    var id = req.params.id;
+    res.json({user: {_id: id, name: "sam"}});
+});
+
 app.post('/users', function (req, res) {
     if (!req.body.user) {
         return_error(res, 400, 'Missing values (user)');
