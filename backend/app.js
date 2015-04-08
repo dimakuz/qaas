@@ -404,10 +404,10 @@ app.post('/authtokens', function (req, res) {
                     '/authtokens/' + auth_tokens.id
                 ).json({
                     authtoken: format_authtoken_info(authtoken),
-                    user: {
+                    users: [{
                         name: name,
                         _id: result._id,
-                    }
+                    }]
                 });
             }
         }
