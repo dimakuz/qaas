@@ -8,13 +8,17 @@ export default Ember.Route.extend({
       this.controller.get('model').save().then(
         function(authToken) {
           var App = self.container.lookup('application:main');
-          App.authToken = authToken.id;
-          App.Auth = Ember.Object({
-            authToken: authToken.is,
-            accountId: authToken.name
-          });
+          App.set('authToken', authToken.id);
+          App.set('username', authToken.get('name'));
+          localStorage.setItem('username', authToken.get('name'));
+          localStorage.setItem('token', authToken.id);
           self.transitionTo('queues.index');
-        });
+        }
+      ).catch(
+        function(errmsg) {
+          self.set('error', errmsg.responseJSON.error.message);
+        }
+      );
     }
   }
 });
