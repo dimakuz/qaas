@@ -8,6 +8,7 @@ var db;
 var queue_col;
 var queue_token_col = {};
 var user_col;
+var subscriber_col;
 var session = require('express-session');
 var uuid = require('node-uuid');
 
@@ -194,7 +195,7 @@ app.post('/queues/:id/subscribers', function (req, res) {
         } else {
             var ordinal = queue.last_ordinal + 1;
             var subscriber = {
-                _id: ordinal,
+                order: ordinal,
                 status: 'waiting',
                 user: {
                     _id: user_id,
@@ -205,13 +206,19 @@ app.post('/queues/:id/subscribers', function (req, res) {
                 {
                     $inc: {last_ordinal: 1},
                     $push: {
-                        subscribers: subscriber,
+                        subscribers: subscriber._id,
                     },
                 },
                 function (err, count, result) {
                     res.json({subscriber: subscriber});
                 }
             );
+            subscriber_col.insert(
+                {
+                    user: {
+                        _id: user_id
+                    }
+                });
         }
     });
 });
@@ -370,5 +377,6 @@ mongodb.MongoClient.connect(DB_URL, function (err, _db) {
     db = _db;
     queue_col = db.collection('_queue');
     user_col = db.collection('_user');
+    subscriber_col = db.collection('_subscription');
     app.listen(8000);
 });
