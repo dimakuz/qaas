@@ -177,8 +177,9 @@ app.get('/queues/:id/subscribers', function (req, res) {
 });
 
 app.post('/subscribers', function (req, res) {
-    var id = req.body.subscriber.queue._id;
-    if (!id) {
+    var queue_id = req.body.subscriber.queue;
+    var user_id = req.body.subscriber.user;
+    if (!queue_id || !user_id) {
         return return_error(res, 400, 'Missing values (id)');
     }
 
@@ -208,6 +209,9 @@ app.post('/subscribers', function (req, res) {
                 user: {
                     _id: user_id,
                 },
+                queue: {
+                    _id: queue_id,
+                },
             };
             subscriber_col.insert(subscriber);
             queue_col.update(
@@ -220,6 +224,38 @@ app.post('/subscribers', function (req, res) {
                 },
                 function (err, count, result) {
                     res.json({subscriber: subscriber});
+                }
+            );
+        }
+    });
+});
+
+app.delete('/subscribers/:sub_id', function (req, res) {
+    var sub_id = req.params.sub_id;
+    if (!sub_id) {
+        return return_error(res, 400, 'Missing values (id)');
+    }
+
+    subscriber_col.findOne({_id: _ID(sub_id)}, function (err, sub) {
+        if (err) {
+            return_error(res, 400, err);
+        } else if (!queue) {
+            return_error(res, 404, 'Subscriber not found');
+        } else {
+            queue_col.update(
+                {_id: sub.queue._id},
+                {
+                    $pull: {
+                        subscribers: sub._id,
+                    },
+                },
+                function (err, count, result) {
+                    if (err) {
+                        return_error(res, 400, err);
+                    } else {
+                        subscriber_col.remove({_id: sub._id});
+                        res.sendStatus(200);
+                    }
                 }
             );
         }
