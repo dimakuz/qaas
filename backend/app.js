@@ -168,8 +168,16 @@ app.get('/queues/:id', function (req, res) {
     });
 });
 
-app.post('/queues/:id/subscribers', function (req, res) {
+app.get('/queues/:id/subscribers', function (req, res) {
     var id = req.params.id;
+     if (!id) {
+        return return_error(res, 400, 'Missing values (id)');
+    }
+    //wip
+});
+
+app.post('/subscribers', function (req, res) {
+    var id = req.body.subscriber.queue._id;
     if (!id) {
         return return_error(res, 400, 'Missing values (id)');
     }
@@ -183,9 +191,9 @@ app.post('/queues/:id/subscribers', function (req, res) {
         return return_error(res, 400, 'Missing values (user_id)');
     }
 
-    //if (user_id != req['_USER_ID']) {
-    //    return return_error(res, 403, 'Not authorized');
-    //}
+    if (user_id != req['_USER_ID']) {
+        return return_error(res, 403, 'Not authorized');
+    }
 
     queue_col.findOne({_id: _ID(id)}, function (err, queue) {
         if (err) {
@@ -219,11 +227,11 @@ app.post('/queues/:id/subscribers', function (req, res) {
 });
 
 
-app.delete('/queues/:id/subscribers/:ordinal', function (req, res) {
+app.delete('/queues/:id/subscribers/:sub_id', function (req, res) {
     var id = req.params.id;
-    var ordinal = req.params.ordinal;
-    if (!id || !ordinal) {
-        return return_error(res, 400, 'Missing values');
+    var sub_id = req.params.sub_id;
+    if (!id || !sub_id) {
+        return return_error(res, 400, 'Missing values (id, sub_id)');
     }
 
     queue_col.findOne(
@@ -235,10 +243,12 @@ app.delete('/queues/:id/subscribers/:ordinal', function (req, res) {
                 return_error(res, 404, "Queue not found");
             } else {
                 subs = q.subscribers;
-                victims = subs.filter(function (s) { return s._id == ordinal });
+                victims = subs.filter(function (s) {
+                    return subscriber_col.find({_id: s._id})
+                });
                 if (victims.length == 1) {
                     if (victims[0].user._id == req['_USER_ID']) {
-                        new_subs = subs.filter(function (s) { return s._id != ordinal });
+                        new_subs = subs.filter(function (s) { return s._id != sub_id });
                         q.subscribers = new_subs;
                         queue_col.update({_id: q._id}, q);
                         res.sendStatus(200);
