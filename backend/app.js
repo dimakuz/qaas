@@ -172,12 +172,18 @@ app.get('/queues/:id', function (req, res) {
                         return return_error(res, 400, err);
                     }
                     cursor.toArray(function (err, subs) {
-                        res.json(
-                            {
-                                queue: format_queue_info(q),
-                                subscribers: subs,
-                            }
-                        );
+                        users = subs.map(function (x) { return _ID(x.user); });
+                        user_col.find({_id: {$in: users}}, function (err, cur) {
+                            cur.toArray(function (err, users) {
+                                res.json(
+                                    {
+                                        queue: format_queue_info(q),
+                                        subscribers: subs,
+                                        users: users.map(format_user_info),
+                                    }
+                                );
+                            });
+                        });
                     });
                 }
             );
