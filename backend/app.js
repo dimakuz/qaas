@@ -80,7 +80,6 @@ function format_user_info(user) {
         _id: user._id,
         authtoken: user.authtoken,
     };
-
 }
 function format_authtoken_info(authtoken) {
     return {
@@ -165,7 +164,21 @@ app.get('/queues/:id', function (req, res) {
         } else if(!q) {
             return_error(res, 404, 'Queue not found');
         } else {
-            res.json({queue: format_queue_info(q)});
+            subscriber_col.find(
+                {queue: _ID(id)},
+                function (err, result) {
+                    if (err) {
+                        return return_error(res, 400, err);
+                    }
+                    res.json(
+                        {
+                            queue: format_queue_info(q),
+                            subscribers: result.ops,
+                        }
+                    );
+                }
+            );
+
         }
     });
 });
