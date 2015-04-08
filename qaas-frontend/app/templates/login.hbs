@@ -1,4 +1,7 @@
 <h2 id="title">Login</h2>
+{{#if error}}
+    <div class="alert alert-danger" role="alert">{{error}}</div>
+{{/if}}
 <form>
     <div class="form-group">
         <label for="queueName">User name</label>

@@ -20,8 +20,11 @@
                                 <li>{{#link-to "users.index"}}Users{{/link-to}}</li>
                             </ul>
                             <ul class="nav navbar-nav navbar-right">
-                                <a>{{username}}</a>
-                              {{#link-to "login" class="btn navbar-btn"}}Sign in{{/link-to}}
+                                {{#if username }}
+                                  <button {{action "logout"}} class="btn navbar-btn">Log out</button>
+                                {{else}}
+                                  {{#link-to "login" class="btn navbar-btn"}}Sign in{{/link-to}}
+                                {{/if}}
                             </ul>
                         </div>
                     </div>
