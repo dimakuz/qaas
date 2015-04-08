@@ -24,6 +24,21 @@ app.use(function (request, response, next) {
     next();
 });
 
+// Authtoken to user
+app.use(function (request, response, next) {
+    var authtoken = request.header('X-AUTH-TOKEN');
+
+    delete request.headers['_USER_ID']
+    if (authtoken) {
+        if (authtoken_to_user(authtoken)) {
+            request['_USER_ID'] = authtoken_to_user(authtoken);
+        } else {
+            return return_error(response, 400, 'Invalid authentication');
+        }
+    }
+    next();
+});
+
 app.use(bodyparser.urlencoded({extended: false}));
 app.use(bodyparser.json());
 
@@ -42,13 +57,13 @@ function queue_token_validate(queue_id, token, cb) {
 }
 
 var auth_tokens = {};
-function auth_token_create(auth_id) {
+function auth_token_create(user_id) {
     var token = uuid.v1();
-    auth_tokens[token] = auth_id;
+    auth_tokens[token] = user_id;
     return token;
 }
-function auth_token_validate(auth_id, token_id) {
-    return auth_tokens[token_id] == auth_id;
+function authtoken_to_user(authtoken) {
+    return auth_tokens[authtoken];
 }
 
 function format_queue_info(queue) {
@@ -101,7 +116,7 @@ app.post('/queues', function (req, res) {
         },
         function (err, result) {
             if (err) {
-                res.status(400).json(err);
+                return_error(res, 400, err);
             } else {
                 var queue = result.ops[0];
                 var id = queue._id;
@@ -156,10 +171,21 @@ app.get('/queues/:id', function (req, res) {
 
 app.post('/queues/:id/subscribers', function (req, res) {
     var id = req.params.id;
-    var user_id = "fucked if i know";
     if (!id) {
-        res.status(400).json({error: 'Missing values'});
-        return;
+        return return_error(res, 400, 'Missing values');
+    }
+
+    if (!req.body.subscriber || !req.body.subscriber.user) {
+        return return_error(res, 400, 'Missing values');
+    }
+
+    var user_id = req.body.subscriber.user._id;
+    if (!user_id) {
+        return return_error(res, 400, 'Missing values');
+    }
+
+    if (user_id != req['_USER_ID']) {
+        return return_error(res, 403, 'Not authorized');
     }
 
     queue_col.findOne({_id: _ID(id)}, function (err, queue) {
@@ -171,7 +197,10 @@ app.post('/queues/:id/subscribers', function (req, res) {
             var ordinal = queue.last_ordinal + 1;
             var subscriber = {
                 _id: ordinal,
-                user_id: user_id,
+                status: 'waiting',
+                user: {
+                    _id: user_id,
+                },
             };
             queue_col.update(
                 {_id: queue._id},
@@ -252,7 +281,7 @@ app.post('/users', function (req, res) {
                 ).json({
                     user: format_user_info(user),
                     authtoken: {
-                        _id: auth_token_create(auth_token_create(user._id)),
+                        _id: auth_token_create(user._id),
                         name: name,
                     },
                 });
@@ -264,15 +293,13 @@ app.post('/users', function (req, res) {
 
 app.post('/authtokens', function (req, res) {
     if (!req.body.authtoken) {
-        return_error(res, 400, 'Missing values (authtoken)')
-        return;
+        return return_error(res, 400, 'Missing values (authtoken)')
     }
     var name = req.body.authtoken.name;
     var password = req.body.authtoken.password;
 
     if (!name || !password) {
-        return_error(res, 400, 'Missing values (name, password)');
-        return;
+        return return_error(res, 400, 'Missing values (name, password)');
     }
 
     user_col.findOne(
@@ -294,6 +321,10 @@ app.post('/authtokens', function (req, res) {
                     '/authtokens/' + auth_tokens.id
                 ).json({
                     authtoken: format_authtoken_info(authtoken),
+                    user: {
+                        name: name,
+                        _id: result._id,
+                    }
                 });
             }
         }
