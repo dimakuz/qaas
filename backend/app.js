@@ -32,8 +32,6 @@ app.use(function (request, response, next) {
     if (authtoken) {
         if (authtoken_to_user(authtoken)) {
             request['_USER_ID'] = authtoken_to_user(authtoken);
-        } else {
-            return return_error(response, 400, 'Invalid authentication');
         }
     }
     next();
@@ -216,6 +214,41 @@ app.post('/queues/:id/subscribers', function (req, res) {
             );
         }
     });
+});
+
+
+app.delete('/queues/:id/subscribers/:ordinal', function (req, res) {
+    var id = req.params.id;
+    var ordinal = req.params.ordinal;
+    if (!id || !ordinal) {
+        return return_error(res, 400, 'Missing values');
+    }
+
+    queue_col.findOne(
+        {  _id: _ID(id)},
+        function (err, q) {
+            if (err) {
+                return_error(res, 400, err);
+            } else if (!q) {
+                return_error(res, 404, "Queue not found");
+            } else {
+                subs = q.subscribers;
+                victims = subs.filter(function (s) { return s._id == ordinal });
+                if (victims.length == 1) {
+                    if (victims[0].user._id == req['_USER_ID']) {
+                        new_subs = subs.filter(function (s) { return s._id != ordinal });
+                        q.subscribers = new_subs;
+                        queue_col.update({_id: q._id}, q);
+                        res.sendStatus(200);
+                    } else {
+                        return_error(res, 401, "Unauthorized");
+                    }
+                } else {
+                    return_error(res, 404, 'Subscription not found');
+                }
+            }
+        }
+    );
 });
 
 
