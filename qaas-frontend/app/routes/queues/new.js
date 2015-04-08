@@ -7,7 +7,7 @@ export default Ember.Route.extend({
       var self = this;
       this.controller.get('model').save().then(
         function(queue) {
-          console.log(queue._id)
+          console.log(queue._id);
           self.transitionTo('queues.show', queue);
         });
     }
