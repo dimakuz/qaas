@@ -1,0 +1,9 @@
+<h3><a href="/queues/new">Create a queue</a></h3>
+<hr>
+<h3>Available Queues</h3>
+<ul>
+{{#each queue in model}}
+    <li><a href='/queues/{{queue.id}}'>{{queue.name}}</a></li>
+{{/each}}
+</ul>
+{{outlet}}
